@@ -281,16 +281,43 @@ multlasso <- function(K,L,p,ns,Sigmas,Sigma0,Omega0=NULL,lambda,rho,tol,grp=NULL
     i <- i+1
     #crt(A,B,C,D,EA,EB,EC,Sigmas,ns,p,rho,K,lambda,prt=TRUE)
   }
-  ## evaluation of performance
+
+  ### performance evaluation
+  #if(is.null(Omega0)){
+  #  Omega0 <- array(dim=c(p,p,K))
+  #  for(k in 1:K){
+  #    Omega0[,,k] <- solve(Sigma0[,,k])
+  #  }
+  #}
+  #res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=B)
+
+  ## performance evaluation
+  doeval <- TRUE
+  ##initialize the res.eval 
+  res.eval.names <- c("err","roc","TFPN")
+  res.eval <- vector("list",length(res.eval.names))
+  names(res.eval) <- res.eval.names
+  
   if(is.null(Omega0)){
-    Omega0 <- array(dim=c(p,p,K))
-    for(k in 1:K){
-      Omega0[,,k] <- solve(Sigma0[,,k])
+    if(is.null(Sigma0)){
+      doeval <- FALSE ## evaluation not possible -- no Sigma0 or Omega0 provided
+    }else{
+      Omega0 <- array(dim=c(p,p,K))
+      for(k in 1:K){
+        Omega0[,,k] <- solve(Sigma0[,,k])
+      }
     }
   }
-  res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=B)
-  aic <- crt(A=A,B=B,C=C,D=D,EA=EA,EB=EB,EC=EC,L=L,Sigmas=Sigmas,ns=ns,p=p,rho=rho,K=K,lambda=lambda,prt=FALSE)$aic
-  return(list(A=A,B=B,C=C,D=C,EA=EA,EB=EB,EC=EC,iter=i,err.est=res.eval$err,roc=res.eval$roc,TFPN=res.eval$TFPN,aic=aic))
+  
+  if(doeval){
+    res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=B)
+  }
+    
+  aic <- crt(A=A,B=B,C=C,D=D,EA=EA,EB=EB,EC=EC,L=L,Sigmas=Sigmas,ns=ns,p=p,
+             rho=rho,K=K,lambda=lambda,prt=FALSE)$aic
+  
+  return(list(A=A,B=B,C=C,D=C,EA=EA,EB=EB,EC=EC,iter=i,
+              err.est=res.eval$err,roc=res.eval$roc,TFPN=res.eval$TFPN,aic=aic))
 }
 
 #' @rdname helper
@@ -838,7 +865,8 @@ crt2 <- function(A,B,C,D,EA,EB,EC,W,Sigmas,ns,p,rho,K,lambda,prt=TRUE){
 ##  TFPN: (TP,TN,FP,FN)
 ##  aic: AIC value
 ########################################################################
-multlasso3 <- function(K,L,p,ns,Sigmas,Sigma0,Omega0=NULL,lambda,rho,tol,grp=NULL,est=NULL,LD=NULL,wt=NULL){
+multlasso3 <- function(K,L,p,ns,Sigmas,Sigma0=NULL,Omega0=NULL,lambda,
+                       rho,tol,grp=NULL,est=NULL,LD=NULL,wt=NULL){
   ## check input
   if(K<=0){
     stop("K must be positive")
@@ -988,18 +1016,47 @@ multlasso3 <- function(K,L,p,ns,Sigmas,Sigma0,Omega0=NULL,lambda,rho,tol,grp=NUL
     #print("End=========================================================")
     #crt3(A,B,C,D,EA,EB,EC,L,L.sqrt,Sigmas,ns,p,rho,K,lambda,prt=TRUE)
   }
-  cat("Error ra: ",ra, " rb: ", rb," rc: ", rc, " s: ", s, "\n")     
-  ## evaluation of performance
+  cat("Error ra: ",ra, " rb: ", rb," rc: ", rc, " s: ", s, "\n")
+
+  cat("Iteration: ", i, "\n")
+  
+  ### performance evaluation
+  #if(is.null(Omega0)){
+  #  Omega0 <- array(dim=c(p,p,K))
+  #  for(k in 1:K){
+  #    Omega0[,,k] <- solve(Sigma0[,,k])
+  #  }
+  #}
+  #
+  #res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=B)
+  
+  ## performance evaluation
+  doeval <- TRUE
+  ##initialize the res.eval 
+  res.eval.names <- c("err","roc","TFPN")
+  res.eval <- vector("list",length(res.eval.names))
+  names(res.eval) <- res.eval.names
+  
   if(is.null(Omega0)){
-    Omega0 <- array(dim=c(p,p,K))
-    for(k in 1:K){
-      Omega0[,,k] <- solve(Sigma0[,,k])
+    if(is.null(Sigma0)){
+      doeval <- FALSE ## evaluation not possible -- no Sigma0 or Omega0 provided
+    }else{
+      Omega0 <- array(dim=c(p,p,K))
+      for(k in 1:K){
+        Omega0[,,k] <- solve(Sigma0[,,k])
+      }
     }
   }
-  cat("Iteration: ", i, "\n")
-  res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=B)
-  aic <- crt3(A=A,B=B,C=C,D=D,EA=EA,EB=EB,EC=EC,L=L,L.sqrt=L.sqrt,Sigmas=Sigmas,ns=ns.old,p=p,rho=rho,K=K,lambda=lambda,prt=FALSE)$aic
-  return(list(A=A,B=B,C=C,D=C,EA=EA,EB=EB,EC=EC,iter=i,err.est=res.eval$err,roc=res.eval$roc,TFPN=res.eval$TFPN,aic=aic))
+  
+  if(doeval){
+    res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=B)
+  }
+  
+  aic <- crt3(A=A,B=B,C=C,D=D,EA=EA,EB=EB,EC=EC,L=L,L.sqrt=L.sqrt,Sigmas=Sigmas,
+              ns=ns.old,p=p,rho=rho,K=K,lambda=lambda,prt=FALSE)$aic
+  
+  return(list(A=A,B=B,C=C,D=C,EA=EA,EB=EB,EC=EC,iter=i,err.est=res.eval$err,
+              roc=res.eval$roc,TFPN=res.eval$TFPN,aic=aic))
 }
 
 #' @rdname helper
@@ -1214,7 +1271,31 @@ multlasso.block <- function(K,L,p,ns,Sigmas,Sigma0,Omega0=NULL,lambda,rho,tol,gr
           est[ind,ind,] <- suppressWarnings(multlasso3(K=K,L=L,ns=ns,p=p.block[i],Sigmas=Sigmas.block,Omega0=Omega0.block,Sigma0=Sigma0.block,lambda=lambda,rho=rho,tol=tol,grp=NULL,est=NULL,LD=LD,wt=wt))$B
         }
     }
-    res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=est)
+    
+    #res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=est)
+    
+    ## performance evaluation
+    doeval <- TRUE
+    ##initialize the res.eval 
+    res.eval.names <- c("err","roc","TFPN")
+    res.eval <- vector("list",length(res.eval.names))
+    names(res.eval) <- res.eval.names
+    
+    if(is.null(Omega0)){
+      if(is.null(Sigma0)){
+        doeval <- FALSE ## evaluation not possible -- no Sigma0 or Omega0 provided
+      }else{
+        Omega0 <- array(dim=c(p,p,K))
+        for(k in 1:K){
+          Omega0[,,k] <- solve(Sigma0[,,k])
+        }
+      }
+    }
+    
+    if(doeval){
+      res.eval <- eval.lasso(grp=grp,Omega0=Omega0,K=K,p=p,est=est)
+    }
+    
     return(list(est=est,err.est=res.eval$err,roc=res.eval$roc,TFPN=res.eval$TFPN))
 }
 
