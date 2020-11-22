@@ -1,23 +1,23 @@
 #' LASICH estimator
 #'
-#' Calculates sensitivity and specificity of estimating K precision matrices using LASICH. 
+#' Calculates the LASICH estimator as well as its sensitivity and specificity 
+#' for estimating K precision matrices. 
 #' Returns precision matrix estimates, Frobenius norm errors, and operating characteristics.
 #'
-#' @param Sigmas (p * p * K) arrays sample covariance matrices from each group
-#' @param Sigma0 Number of case subjects
-#' @param Sigma0 (p * p * K) arrays true covariance matrices
-#' @param Omega0 (p * p * K) arrays true precision matrices
+#' @param Sigmas (p * p * K) array of sample covariance matrices from each group
+#' @param Sigma0 (p * p * K) array of true covariance matrices (needed for evaluation)
+#' @param Omega0 (p * p * K) array of true precision matrices (needed for evaluation)
 #' @param ns vector of sample sizes for each group
 #' @param L graph Laplacian
 #' @param lambda1 value of first tuning parameter (lambda_1)
 #' @param lambda2 value of second tuning parameter (lambda_2)
 #' @param tol tolerance level for determining convergence of LASICH
 #' @param rho tuning parameter for ADMM algorithm
-#' @param truegraph a list containing true graphs (to return performance evaluation metrics)
+#' @param truegraph a list containing true graphs (for performance evaluation)
 #' @param initest initial estimator for warm start
 #' @param LD a diagonal matrix added to L to improve computational efficiency
 #' @param wt weight for likelihood; NULL = nk/n, 1 = (1,...,1)???
-#' @param thr whether to threshold the sample cov matrix to find connected components of the graph
+#' @param thr whether to threshold the sample cov matrix to estimate the connected components
 #'
 #' @export
 
@@ -26,23 +26,24 @@
 ## FUNCTION: lasich
 ##
 ## Output:
+##  estimates: 
 ##  roc: sensitivity and specificity
 ########################################################################
 lasich <- function(
-	Sigmas,				#(p * p * K) arrays sample covariance matrices from each group
-  Sigma0,       # (p * p * K) arrays true covariance matrices
-  Omega0,       # (p * p * K) arrays true precision matrices
-	ns, 				#vector of sample sizes for each group
-	L=NULL, 			#graph Laplacian
-	lambda1, 			#value of first tuning parameter (lambda_1)
-	lambda2, 			#value of second tuning parameter (lambda_2)
-	tol,				#tolerance level for determining convergence of LASICH
-	rho, 				#tuning parameter for ADMM algorithm
-	truegraph=NULL, 	#a list containing true graphs (to return performance evaluation metrics)
-	initest=NULL,		#initial estimator for warm start
-	LD=NULL, 			#a diagonal matrix added to L to improve computational efficiency
-	wt=NULL, 			#weight for likelihood; NULL = nk/n, 1 = (1,...,1)???
-	thr=TRUE			#whether to threshold the sample cov matrix to find connected components of the graph
+	Sigmas,				# (p * p * K) array of sample covariance matrices from each group
+  Sigma0=NULL,  # (p * p * K) array of true covariance matrices (needed for evaluation)
+  Omega0=NULL,  # (p * p * K) array of true precision matrices (needed for evaluation)
+	ns, 				  # vector of sample sizes for each group
+	L=NULL, 			# graph Laplacian
+	lambda1, 			# value of first tuning parameter (lambda_1)
+	lambda2, 			# value of second tuning parameter (lambda_2)
+	tol,				  # tolerance level for determining convergence of LASICH
+	rho, 				  # tuning parameter for ADMM algorithm
+	truegraph=NULL, 	# a list containing true graphs (for performance evaluation)
+	initest=NULL,	# initial estimator for warm start
+	LD=NULL, 			# a diagonal matrix added to L to improve computational efficiency
+	wt=NULL, 			# weight for likelihood; NULL = nk/n, 1 = (1,...,1)???
+	thr=TRUE			# whether to threshold the sample cov matrix to estimate the connected components
 ########################################################################
 ){
 
@@ -86,28 +87,31 @@ lasich <- function(
     	}
   	}
 
-
     ##main estimation function
     shrnk <- 1
     lambda <- c(lambda1,lambda2)
 	if(shrnk==1){
 		if(thr==FALSE){
 			res <- suppressWarnings(
-				multlasso3(K=K, L=L, ns=ns, p=p, Sigmas=Sigmas, Omega0=Omega0, Sigma0=Sigma0, lambda=lambda, rho=rho, tol=tol, grp=grp, est=est, LD=LD, wt=wt)
+				multlasso3(K=K, L=L, ns=ns, p=p, Sigmas=Sigmas, Omega0=Omega0, Sigma0=Sigma0, 
+				           lambda=lambda, rho=rho, tol=tol, grp=grp, est=est, LD=LD, wt=wt)
 				)
 		}else{
 			res <- suppressWarnings(
-				multlasso.block( K=K, L=L, ns=ns, p=p, Sigmas=Sigmas, Omega0=Omega0, Sigma0=Sigma0, lambda=lambda, rho=rho, tol=tol, grp=grp, est=est, LD=LD, wt=wt)
+				multlasso.block(K=K, L=L, ns=ns, p=p, Sigmas=Sigmas, Omega0=Omega0, Sigma0=Sigma0, 
+				                lambda=lambda, rho=rho, tol=tol, grp=grp, est=est, LD=LD, wt=wt)
 				)
 		}
 	}else if(shrnk==0){
 		if(thr==FALSE){
 			res <- suppressWarnings(
-				multlasso(K=K, L=L, p=p, ns=ns, Sigmas=dat$Sigmas, Sigma0=Sigma0, Omega0=Omega0, lambda=lambda, rho=rho, tol=tol, grp=grp, est=est, LD=LD)
+				multlasso(K=K, L=L, p=p, ns=ns, Sigmas=dat$Sigmas, Sigma0=Sigma0, Omega0=Omega0, 
+				          lambda=lambda, rho=rho, tol=tol, grp=grp, est=est, LD=LD)
 				)
 		}else{
 			res <- suppressWarnings(
-				multlasso.block(K=K, L=L, ns=ns, p=p, Sigmas=Sigmas, Omega0=Omega0, Sigma0=Sigma0, lambda=lambda, rho=rho, tol=tol, grp=grp, est=est, LD=LD, wt=wt)
+				multlasso.block(K=K, L=L, ns=ns, p=p, Sigmas=Sigmas, Omega0=Omega0, Sigma0=Sigma0, 
+				                lambda=lambda, rho=rho, tol=tol, grp=grp, est=est, LD=LD, wt=wt)
 				)
 		}
 	}
